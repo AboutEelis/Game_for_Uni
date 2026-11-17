@@ -1,16 +1,36 @@
 #include "player.hpp"
 #include <algorithm>
 #include <iostream>
+#include <string>
 
-Player::Player() : sprite(texture), speed(300.f) {
-    if (!texture.loadFromFile("assets/player_walk.png")) {
+Player::Player() : sprite(texture), speed(200.f), health(100.f) {
+    if (!texture.loadFromFile(std::string(ASSETS_DIR) + "player_walk.png")) {
         std::cerr << "Не удалось загрузить assets/player_walk.png\n";
     }
+
+    healthBarBackground.setSize({60.f, 7.f});
+    healthBarBackground.setFillColor(sf::Color(50,50,50));
+
+    healthBarFill.setSize({60.f, 7.f});
+    healthBarFill.setFillColor(sf::Color::Red);
 
     sprite.setTextureRect(sf::IntRect({0,0}, {frameWidth, frameHeight}));
     sprite.setOrigin({frameWidth/2.f, frameHeight/2.f});
     sprite.setPosition({200.f, 300.f});
     sprite.setScale({0.5f, 0.5f});
+
+}
+
+void Player::takeDamage(float amount) {
+    health = std::clamp(health - amount, 0.f, maxHealth);
+}
+
+bool Player::isFacingRight() const {
+    return facingRight;
+}
+
+sf::FloatRect Player::getBounds() const {
+    return sprite.getGlobalBounds();
 }
 
 void Player::update(float dt, sf::Vector2f windowSize) {
@@ -65,4 +85,20 @@ void Player::update(float dt, sf::Vector2f windowSize) {
 
 void Player::draw(sf::RenderWindow& window) {
     window.draw(sprite);
+
+    const sf::FloatRect bounds = sprite.getGlobalBounds();
+    constexpr float barWidth = 60.f;
+    constexpr float barOffset = 4.f;
+
+    const float x = bounds.position.x + (bounds.size.x - barWidth) / 2.f;
+    const float y = bounds.position.y + (bounds.size.y + barOffset);
+
+    const float healthRatio = std::clamp(health / maxHealth, 0.f, 1.f);
+
+    healthBarBackground.setPosition({x,y});
+    healthBarFill.setPosition({x,y});
+    healthBarFill.setSize({barWidth * healthRatio, 7.f});
+
+    window.draw(healthBarBackground);
+    window.draw(healthBarFill);
 }

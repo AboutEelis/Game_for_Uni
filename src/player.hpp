@@ -6,11 +6,20 @@ public:
     Player();
     void update(float dt, sf::Vector2f windowSize);
     void draw(sf::RenderWindow& window);
+    void takeDamage(float amount);
+    bool isFacingRight() const;
+    sf::FloatRect getBounds() const;
 
 private:
     sf::Texture texture;
     sf::Sprite sprite;
     float speed;
+    float health;
+
+    float maxHealth = 100.f;
+    sf::RectangleShape healthBarBackground;
+    sf::RectangleShape healthBarFill;
+
 
     // Анимация ходьбы
     int currentFrame = 0; // Текущий кадр
