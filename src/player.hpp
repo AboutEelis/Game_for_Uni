@@ -9,6 +9,7 @@ public:
     void takeDamage(float amount);
     bool isFacingRight() const;
     sf::FloatRect getBounds() const;
+    sf::Vector2f getPosition() const;
 
 private:
     sf::Texture texture;

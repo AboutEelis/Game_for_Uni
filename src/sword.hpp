@@ -1,13 +1,15 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <cstddef>
+#include <vector>
 
 class Sword {
 public:
     Sword();
 
-    bool update(
+    std::vector<std::size_t> update(
         float dt, const sf::FloatRect& playerBounds,
-        bool facingRight, const sf::FloatRect& enemyBounds
+        bool facingRight, const std::vector<sf::FloatRect>& targets
     );
 
     void draw(sf::RenderWindow& window) const;
@@ -27,7 +29,7 @@ private:
     float swingTimer = 0.f;
     
     bool swingFacingRight = true;
-    bool hitThisSwing = false;
+    std::vector<std::size_t> alreadyHit;
     bool textureLoaded = false;
 
 };

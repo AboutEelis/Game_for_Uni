@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "player.hpp"
+#include "enemyManager.hpp"
 #include "progression.hpp"
 #include "staff.hpp"
 #include "sword.hpp"
@@ -16,17 +17,12 @@ public:
     void draw(sf::RenderWindow& window);
 
 private:
-    void damageEnemy(float amount);
-
     Player player_;
     Progression progression_;
     Sword sword_;
     Staff staff_;
     Aura aura_;
-
-    sf::RectangleShape enemy_;
-    float enemyHealth_ = 50.f;
-    bool enemyAlive_ = true;
+    EnemyManager enemies_{5};
 
     float damageCooldown_ = 0.f;
     static constexpr float damageInterval_ = 0.05f;

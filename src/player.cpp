@@ -33,6 +33,10 @@ sf::FloatRect Player::getBounds() const {
     return sprite.getGlobalBounds();
 }
 
+sf::Vector2f Player::getPosition() const {
+    return sprite.getPosition();
+}
+
 void Player::update(float dt, sf::Vector2f windowSize) {
     bool moving = false;
 

@@ -1,41 +1,30 @@
 #include "game.hpp"
 
+#include <cstddef>
 #include <vector>
 
 Game::Game() {
-    enemy_.setSize({40.f, 40.f});
-    enemy_.setFillColor(sf::Color::Red);
-    enemy_.setPosition({400.f, 300.f});
-}
-
-void Game::damageEnemy(float amount) {
-    if (!enemyAlive_)
-        return;
-
-    enemyHealth_ -= amount;
-
-    if (enemyHealth_ <= 0.f)
-        enemyAlive_ = false;
+    enemies_.setPlayer(&player_);
 }
 
 void Game::update(float dt, sf::Vector2f windowSize) {
     player_.update(dt, windowSize);
 
-    const sf::FloatRect playerBounds = player_.getBounds();
-    const sf::FloatRect enemyBounds =
-        enemyAlive_ ? enemy_.getGlobalBounds() : sf::FloatRect{};
+    enemies_.update(dt);
 
+    const sf::FloatRect playerBounds = player_.getBounds();
     const sf::Vector2f playerCenter{
             playerBounds.position.x + playerBounds.size.x / 2.f,
             playerBounds.position.y + playerBounds.size.y / 2.f
     };
 
-    // Список целей для дальнобойного оружия (посох, аура).
+    // Список целей для оружия.
     // Индекс в списке = номер врага.
-    const std::vector<sf::FloatRect> targets{enemyBounds};
+    const std::vector<sf::FloatRect> targets = enemies_.getBounds();
 
-    if (sword_.update(dt, playerBounds, player_.isFacingRight(), enemyBounds))
-        damageEnemy(12.f);
+    // Меч
+    for (std::size_t index : sword_.update(dt, playerBounds, player_.isFacingRight(), targets))
+        enemies_.damageEnemy(index, 12.f);
 
     // Посох работает после того, как его выбрали в прокачке.(1 пока заглушка)
     const int staffLevel = 1;
@@ -44,28 +33,32 @@ void Game::update(float dt, sf::Vector2f windowSize) {
         staff_.setLevel(staffLevel);
 
         for (const StaffHit& hit : staff_.update(dt, playerCenter, targets)) {
-            if (hit.targetIndex == 0)
-                damageEnemy(hit.damage);
+                enemies_.damageEnemy(hit.targetIndex, hit.damage);
         }
     }
 
+    // Аура
     const int auraLevel = 1;
 
     if (auraLevel > 0) {
         aura_.setLevel(auraLevel);
 
         for (const StaffHit& hit : aura_.update(dt, playerCenter, targets)) {
-            if (hit.targetIndex == 0)
-                damageEnemy(hit.damage);
+                enemies_.damageEnemy(hit.targetIndex, hit.damage);
         }
     }
 
     if (damageCooldown_ > 0.f)
         damageCooldown_ -= dt;
 
-    const bool touching =
-        enemyAlive_ &&
-        playerBounds.findIntersection(enemy_.getGlobalBounds()).has_value();
+    bool touching = false;
+    for (const sf::FloatRect& target : targets) {
+        if (target.size.x > 0.f && target.size.y > 0.f &&
+        playerBounds.findIntersection(target).has_value()) {
+            touching = true;
+            break;
+        }
+    }
 
     if (touching && damageCooldown_ <= 0.f) {
         player_.takeDamage(damageAmount_);
@@ -77,10 +70,7 @@ void Game::update(float dt, sf::Vector2f windowSize) {
 
 void Game::draw(sf::RenderWindow& window) {
     aura_.draw(window);
-
-    if (enemyAlive_)
-        window.draw(enemy_);
-
+    enemies_.draw(window);
     staff_.draw(window);
     sword_.draw(window);
     player_.draw(window);

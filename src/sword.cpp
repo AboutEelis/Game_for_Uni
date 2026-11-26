@@ -20,9 +20,9 @@ Sword::Sword() : sprite(texture) {
     sprite.setOrigin({framewidth / 2.f, frameheight / 2.f});
 }
 
-bool Sword::update(
+std::vector<std::size_t> Sword::update(
     float dt, const sf::FloatRect& playerBounds,
-    bool facingRight, const sf::FloatRect& enemyBounds)
+    bool facingRight, const std::vector<sf::FloatRect>& targets)
 {
     attackTimer += dt;
 
@@ -39,14 +39,14 @@ bool Sword::update(
     if (swingTimer <= 0.f && attackTimer >= attackInterval) {
         attackTimer = 0.f;
         swingTimer = swingDuration;
-        hitThisSwing = false;
+        alreadyHit.clear();
 
         swingHitboxPosition = {playerAttackX, playerAttackY};
         swingFacingRight = facingRight;
     }
 
     if (swingTimer <= 0.f) {
-        return false;
+        return {};
     }
 
     const float elapsed = swingDuration - swingTimer;
@@ -78,13 +78,28 @@ bool Sword::update(
 
     const bool damageWindow = elapsed >= swingDuration / 3.f && elapsed <swingDuration * 2.f / 3.f;
 
-    if (damageWindow && !hitThisSwing &&
-        hitbox.getGlobalBounds().findIntersection(enemyBounds).has_value()) {
-            hitThisSwing = true;
-            return true;
+    std::vector<std::size_t> hits;
+
+    if (damageWindow) {
+        const sf::FloatRect hitboxBounds = hitbox.getGlobalBounds();
+
+        for (std::size_t i=0; i < targets.size(); ++i) {
+            const sf::FloatRect& target = targets[i];
+
+            if (target.size.x <= 0.f || target.size.y <= 0.f)
+                continue;
+
+            if (std::find(alreadyHit.begin(), alreadyHit.end(), i) != alreadyHit.end())
+                continue;
+
+            if (hitboxBounds.findIntersection(target).has_value()) {
+                alreadyHit.push_back(i);
+                hits.push_back(i);
+            }
         }
-    
-    return false;
+    }
+
+    return hits;
 }
 
 void Sword::draw(sf::RenderWindow& window) const {

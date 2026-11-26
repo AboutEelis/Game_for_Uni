@@ -12,6 +12,14 @@ FetchContent_Declare(SFML
     SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(game src/main.cpp src/game.cpp src/player.cpp src/sword.cpp src/staff.cpp src/aura.cpp)
+add_executable(game
+    src/main.cpp
+    src/game.cpp
+    src/player.cpp
+    src/sword.cpp
+    src/staff.cpp
+    src/aura.cpp
+    src/enemyManager.cpp
+)
 target_compile_definitions(game PRIVATE ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets/")
 target_link_libraries(game PRIVATE SFML::Graphics)
