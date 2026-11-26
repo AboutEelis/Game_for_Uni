@@ -1,5 +1,5 @@
 #include <SFML/Graphics.hpp>
-#include "player.hpp"
+#include "game.hpp"
 
 int main() {
     // Create the main window
@@ -9,7 +9,7 @@ int main() {
     sf::RenderWindow window(sf::VideoMode({width, height}), "SFML window");
 
     sf::Clock clock;
-    Player player;
+    Game game;
 
     // Start the game loop
     while (window.isOpen()) {
@@ -25,11 +25,13 @@ int main() {
 
         // 2.Update
         float dt = clock.restart().asSeconds();
-        player.update(dt, windowSize);
+        game.update(dt, windowSize);
+
 
         // 3.Window dispay
         window.clear(sf::Color(106, 153, 78, 255));
-        player.draw(window);
+
+        game.draw(window);
         window.display();
     }
 }

@@ -1,31 +1,108 @@
 #include "player.hpp"
 #include <algorithm>
+#include <iostream>
+#include <string>
 
-Player::Player() : speed(300.f) {
-    shape.setSize({50.f, 100.f});
-    shape.setFillColor(sf::Color::Black);
-    shape.setPosition({10.f, 20.f});
+Player::Player() : sprite(texture), speed(200.f), health(100.f) {
+    if (!texture.loadFromFile(std::string(ASSETS_DIR) + "player_walk.png")) {
+        std::cerr << "Не удалось загрузить assets/player_walk.png\n";
+    }
+
+    healthBarBackground.setSize({60.f, 7.f});
+    healthBarBackground.setFillColor(sf::Color(50,50,50));
+
+    healthBarFill.setSize({60.f, 7.f});
+    healthBarFill.setFillColor(sf::Color::Red);
+
+    sprite.setTextureRect(sf::IntRect({0,0}, {frameWidth, frameHeight}));
+    sprite.setOrigin({frameWidth/2.f, frameHeight/2.f});
+    sprite.setPosition({200.f, 300.f});
+    sprite.setScale({0.5f, 0.5f});
+
+}
+
+void Player::takeDamage(float amount) {
+    health = std::clamp(health - amount, 0.f, maxHealth);
+}
+
+bool Player::isFacingRight() const {
+    return facingRight;
+}
+
+sf::FloatRect Player::getBounds() const {
+    return sprite.getGlobalBounds();
+}
+
+sf::Vector2f Player::getPosition() const {
+    return sprite.getPosition();
 }
 
 void Player::update(float dt, sf::Vector2f windowSize) {
+    bool moving = false;
+
+    bool up    = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::Up);
+    bool down  = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::Down);
+    bool left  = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::Left);
+    bool right = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::Right);
     // Движение
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
-        shape.move({0.f, -speed * dt});
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
-        shape.move({0.f, speed * dt});
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
-        shape.move({-speed * dt, 0.f});
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
-        shape.move({speed * dt, 0.f});
+    if (up){
+        sprite.move({0.f, -speed * dt});
+        moving = true;
+    }
+    if (down){
+        sprite.move({0.f, speed * dt});
+        moving = true;
+    }
+    if (left){
+        sprite.move({-speed * dt, 0.f});
+        moving = true;
+        facingRight = false;
+    }
+    if (right){
+        sprite.move({speed * dt, 0.f});
+        moving = true;
+        facingRight = true;
+    }
+
+    if (moving) {
+        animTimer += dt;
+        while (animTimer >= frameTime) {
+            animTimer -= frameTime;
+            currentFrame = (currentFrame + 1) % frameCount;
+        }
+    } else {
+        animTimer = 0.f;
+        currentFrame = 0;
+    }
+
+    sprite.setTextureRect(sf::IntRect({currentFrame * frameWidth, 0}, {frameWidth, frameHeight}));
+    sprite.setScale({facingRight ? 0.5f : -0.5f, 0.5f});
+    
 
     // Не выходить за границы окна
-    sf::Vector2f pos = shape.getPosition();
-    sf::Vector2f size = shape.getSize();
-    pos.x = std::clamp(pos.x, 0.f, windowSize.x - size.x);
-    pos.y = std::clamp(pos.y, 0.f, windowSize.y - size.y);
-    shape.setPosition(pos);
+    sf::Vector2f pos = sprite.getPosition();
+    sf::Vector2f half = sprite.getGlobalBounds().size / 2.f;
+    pos.x = std::clamp(pos.x, half.x, windowSize.x - half.x);
+    pos.y = std::clamp(pos.y, half.y, windowSize.y - half.y);
+    sprite.setPosition(pos);
 }
 
 void Player::draw(sf::RenderWindow& window) {
-    window.draw(shape);
+    window.draw(sprite);
+
+    const sf::FloatRect bounds = sprite.getGlobalBounds();
+    constexpr float barWidth = 60.f;
+    constexpr float barOffset = 4.f;
+
+    const float x = bounds.position.x + (bounds.size.x - barWidth) / 2.f;
+    const float y = bounds.position.y + (bounds.size.y + barOffset);
+
+    const float healthRatio = std::clamp(health / maxHealth, 0.f, 1.f);
+
+    healthBarBackground.setPosition({x,y});
+    healthBarFill.setPosition({x,y});
+    healthBarFill.setSize({barWidth * healthRatio, 7.f});
+
+    window.draw(healthBarBackground);
+    window.draw(healthBarFill);
 }
